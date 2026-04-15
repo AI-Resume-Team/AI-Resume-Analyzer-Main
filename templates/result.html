@@ -1,1 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Analysis Results — AI Resume Analyzer</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body class="result-page">
 
+  <div class="bg-grid"></div>
+  <div class="bg-orb orb1"></div>
+  <div class="bg-orb orb2"></div>
+
+  <main class="page-wrap">
+
+    <!-- ── TOP BAR ── -->
+    <header class="result-header">
+      <a href="/" class="back-link">← Analyze another</a>
+      <div class="result-title-wrap">
+        <h1 class="result-title">Analysis <span class="accent">Results</span></h1>
+        {% if name != "Not found" %}
+          <p class="candidate-name">{{ name }}</p>
+        {% endif %}
+      </div>
+    </header>
+
+    <!-- ── SCORE BANNER ── -->
+    <section class="score-banner">
+
+      <!-- Quality Score -->
+      <div class="score-card" data-score="{{ quality_score }}">
+        <div class="score-ring-wrap">
+          <svg class="score-ring" viewBox="0 0 120 120">
+            <circle class="ring-bg" cx="60" cy="60" r="50"/>
+            <circle class="ring-fill quality-ring" cx="60" cy="60" r="50"
+              style="--dash: {{ (quality_score / 100 * 314)|round(1) }}"/>
+          </svg>
+          <div class="score-center">
+            <span class="score-num">{{ quality_score }}</span>
+            <span class="score-label">/100</span>
+          </div>
+        </div>
+        <p class="score-title">Resume Quality</p>
+        <p class="score-grade {% if quality_score >= 75 %}grade-good{% elif quality_score >= 50 %}grade-mid{% else %}grade-low{% endif %}">
+          {% if quality_score >= 75 %}Excellent{% elif quality_score >= 50 %}Good{% else %}Needs Work{% endif %}
+        </p>
+      </div>
+
+      <!-- Match Score -->
+      {% if jd_provided %}
+      <div class="score-card" data-score="{{ match_score }}">
+        <div class="score-ring-wrap">
+          <svg class="score-ring" viewBox="0 0 120 120">
+            <circle class="ring-bg" cx="60" cy="60" r="50"/>
+            <circle class="ring-fill match-ring" cx="60" cy="60" r="50"
+              style="--dash: {{ (match_score / 100 * 314)|round(1) }}"/>
+          </svg>
+          <div class="score-center">
+            <span class="score-num">{{ match_score }}</span>
+            <span class="score-label">%</span>
+          </div>
+        </div>
+        <p class="score-title">JD Match Score</p>
+        <p class="score-grade {% if match_score >= 65 %}grade-good{% elif match_score >= 40 %}grade-mid{% else %}grade-low{% endif %}">
+          {% if match_score >= 65 %}Strong Match{% elif match_score >= 40 %}Moderate{% else %}Low Match{% endif %}
+        </p>
+      </div>
+      {% endif %}
+
+      <!-- Contact Info -->
+      <div class="score-card info-card">
+        <p class="info-title">Contact Info</p>
+        <div class="info-row"><span class="info-icon">✉</span> {{ email }}</div>
+        <div class="info-row"><span class="info-icon">📱</span> {{ phone }}</div>
+        <div class="info-row"><span class="info-icon">📝</span> {{ word_count }} words</div>
+      </div>
+
+    </section>
+
+    <!-- ── TWO-COLUMN GRID ── -->
+    <div class="result-grid">
+
+      <!-- Left column -->
+      <div class="col">
+
+        <!-- Predicted Roles -->
+        <div class="card result-card">
+          <h2 class="card-heading">🎯 Predicted Job Roles</h2>
+          <ul class="role-list">
+            {% for role in predicted_roles %}
+              <li class="role-item">{{ role }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+
+        <!-- Sections Detected -->
+        <div class="card result-card">
+          <h2 class="card-heading">📋 Sections Detected</h2>
+          <div class="section-grid">
+            {% for sec, found in sections.items() %}
+              <div class="section-chip {% if found %}chip-found{% else %}chip-missing{% endif %}">
+                {% if found %}✓{% else %}✗{% endif %} {{ sec }}
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Quality Breakdown -->
+        <div class="card result-card">
+          <h2 class="card-heading">📊 Quality Breakdown</h2>
+          {% for criterion, score_str in quality_breakdown.items() %}
+            {% set parts = score_str.split('/') %}
+            {% set got = parts[0]|int %}
+            {% set max = parts[1]|int %}
+            <div class="breakdown-row">
+              <span class="breakdown-label">{{ criterion }}</span>
+              <div class="breakdown-bar-wrap">
+                <div class="breakdown-bar" style="--pct: {{ (got / max * 100)|int }}%"></div>
+              </div>
+              <span class="breakdown-score">{{ score_str }}</span>
+            </div>
+          {% endfor %}
+        </div>
+
+      </div>
+
+      <!-- Right column -->
+      <div class="col">
+
+        <!-- Resume Skills -->
+        <div class="card result-card">
+          <h2 class="card-heading">⚡ Skills Found
+            <span class="count-badge">{{ resume_skills|length }}</span>
+          </h2>
+          {% if resume_skills %}
+            <div class="skill-cloud">
+              {% for skill in resume_skills %}
+                <span class="skill-chip chip-resume" title="{{ skill_categories[skill] }}">{{ skill }}</span>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="empty-msg">No known skills detected. Try expanding your skills section.</p>
+          {% endif %}
+        </div>
+
+        <!-- Missing Skills -->
+        {% if jd_provided %}
+        <div class="card result-card">
+          <h2 class="card-heading">🔴 Missing Skills
+            <span class="count-badge badge-red">{{ missing_skills|length }}</span>
+          </h2>
+          {% if missing_skills %}
+            <div class="skill-cloud">
+              {% for skill in missing_skills %}
+                <span class="skill-chip chip-missing-skill">{{ skill }}</span>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="empty-msg success-msg">✓ Your resume covers all skills from the job description!</p>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Grammar -->
+        <div class="card result-card">
+          <h2 class="card-heading">✏️ Grammar Check
+            <span class="count-badge {% if grammar_error_count > 0 %}badge-red{% endif %}">
+              {{ grammar_error_count }} issues
+            </span>
+          </h2>
+          {% if grammar_errors %}
+            <ul class="grammar-list">
+              {% for err in grammar_errors[:8] %}
+                <li class="grammar-item">{{ err }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── SUGGESTIONS ── -->
+    <section class="card result-card suggestions-card">
+      <h2 class="card-heading">💡 Improvement Suggestions</h2>
+      <ul class="suggestion-list">
+        {% for s in suggestions %}
+          <li class="suggestion-item">{{ s }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <!-- ── CTA ── -->
+    <div class="cta-row">
+      <a href="/" class="btn-analyze">← Analyze Another Resume</a>
+    </div>
+
+    <footer class="footer">AI Resume Analyzer &nbsp;·&nbsp; Built with Flask, NLTK &amp; Scikit-learn</footer>
+
+  </main>
+
+  <script>
+    // Animate score rings on load
+    document.querySelectorAll('.ring-fill').forEach(ring => {
+      const dash = getComputedStyle(ring).getPropertyValue('--dash');
+      ring.style.strokeDashoffset = 314;
+      setTimeout(() => {
+        ring.style.transition = 'stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1)';
+        ring.style.strokeDashoffset = 314 - parseFloat(dash);
+      }, 200);
+    });
+
+    // Animate progress bars
+    document.querySelectorAll('.breakdown-bar').forEach(bar => {
+      const pct = getComputedStyle(bar).getPropertyValue('--pct');
+      bar.style.width = '0%';
+      setTimeout(() => {
+        bar.style.transition = 'width 1s ease';
+        bar.style.width = pct;
+      }, 300);
+    });
+  </script>
+
+</body>
+</html>
