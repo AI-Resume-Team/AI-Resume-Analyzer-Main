@@ -1,1 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Resume Analyzer</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- ── BACKGROUND GRID ── -->
+  <div class="bg-grid"></div>
+  <div class="bg-orb orb1"></div>
+  <div class="bg-orb orb2"></div>
+
+  <main class="page-wrap">
+
+    <!-- ── HERO ── -->
+    <header class="hero">
+      <div class="badge">✦ Powered by NLP &amp; TF-IDF</div>
+      <h1 class="hero-title">
+        <span class="accent">AI</span> Resume<br>Analyzer
+      </h1>
+      <p class="hero-sub">Upload your resume. Paste a job description. Get instant feedback, skill gaps, match score, and role predictions.</p>
+    </header>
+
+    <!-- ── FLASH MESSAGES ── -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}">⚠ {{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- ── UPLOAD FORM ── -->
+    <section class="card form-card">
+      <form action="/analyze" method="post" enctype="multipart/form-data" id="analyzeForm">
+
+        <!-- File Drop Zone -->
+        <div class="field">
+          <label class="field-label">Resume File <span class="tag">PDF or DOCX</span></label>
+          <div class="drop-zone" id="dropZone">
+            <div class="drop-icon">
+              <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M24 4L24 32M24 4L14 14M24 4L34 14" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M8 36V40C8 41.1 8.9 42 10 42H38C39.1 42 40 41.1 40 40V36" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <p class="drop-text">Drag &amp; drop your resume here</p>
+            <p class="drop-hint">or click to browse files</p>
+            <input type="file" id="resumeFile" name="resume" accept=".pdf,.docx" required hidden />
+            <div class="file-name" id="fileName">No file chosen</div>
+          </div>
+        </div>
+
+        <!-- Job Description -->
+        <div class="field">
+          <label class="field-label" for="jobDesc">
+            Job Description
+            <span class="tag optional">Optional – for match score</span>
+          </label>
+          <textarea
+            id="jobDesc"
+            name="job_description"
+            rows="7"
+            placeholder="Paste the full job description here to get a match score and identify missing skills…"
+          ></textarea>
+        </div>
+
+        <button type="submit" class="btn-analyze" id="submitBtn">
+          <span class="btn-text">Analyze Resume</span>
+          <span class="btn-icon">→</span>
+        </button>
+
+      </form>
+    </section>
+
+    <!-- ── FEATURE GRID ── -->
+    <section class="features">
+      <div class="feat-item">
+        <div class="feat-icon">⚡</div>
+        <h3>Instant Parsing</h3>
+        <p>PDF &amp; DOCX text extracted in seconds using PyPDF2 &amp; python-docx.</p>
+      </div>
+      <div class="feat-item">
+        <div class="feat-icon">🎯</div>
+        <h3>Match Score</h3>
+        <p>TF-IDF + Cosine Similarity measures how well your resume fits the role.</p>
+      </div>
+      <div class="feat-item">
+        <div class="feat-icon">🧠</div>
+        <h3>Role Prediction</h3>
+        <p>Skill-category intelligence predicts the best-fit job roles for you.</p>
+      </div>
+      <div class="feat-item">
+        <div class="feat-icon">✏️</div>
+        <h3>Quality Feedback</h3>
+        <p>Section detection, grammar check, and actionable improvement tips.</p>
+      </div>
+    </section>
+
+    <footer class="footer">AI Resume Analyzer &nbsp;·&nbsp; Built with Flask, NLTK &amp; Scikit-learn</footer>
+
+  </main>
+
+  <script>
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('resumeFile');
+    const fileName  = document.getElementById('fileName');
+    const form      = document.getElementById('analyzeForm');
+    const submitBtn = document.getElementById('submitBtn');
+
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    dropZone.addEventListener('dragover', e => {
+      e.preventDefault();
+      dropZone.classList.add('drag-over');
+    });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      if (e.dataTransfer.files.length) {
+        fileInput.files = e.dataTransfer.files;
+        updateFileName(e.dataTransfer.files[0].name);
+      }
+    });
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length) updateFileName(fileInput.files[0].name);
+    });
+
+    function updateFileName(name) {
+      fileName.textContent = '📄 ' + name;
+      fileName.classList.add('has-file');
+    }
+
+    form.addEventListener('submit', () => {
+      submitBtn.classList.add('loading');
+      submitBtn.querySelector('.btn-text').textContent = 'Analyzing…';
+    });
+  </script>
+
+</body>
+</html>
 
