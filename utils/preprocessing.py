@@ -1,10 +1,6 @@
 import re
 import string
 
-# ---------------------------------------------------------------------------
-# Lazy-load NLTK resources so the app still works if NLTK data isn't present
-# ---------------------------------------------------------------------------
-
 def _get_stopwords():
     try:
         from nltk.corpus import stopwords
