@@ -1,228 +1,363 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Analysis Results — AI Resume Analyzer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analysis Results — CareerPath AI</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Fraunces:ital,wght@0,300;0,600;1,300&display=swap"
+    rel="stylesheet">
 </head>
+
 <body class="result-page">
 
-  <div class="bg-grid"></div>
-  <div class="bg-orb orb1"></div>
-  <div class="bg-orb orb2"></div>
-
-  <main class="page-wrap">
-
-    <!-- ── TOP BAR ── -->
-    <header class="result-header">
-      <a href="/" class="back-link">← Analyze another</a>
-      <div class="result-title-wrap">
-        <h1 class="result-title">Analysis <span class="accent">Results</span></h1>
-        {% if name != "Not found" %}
-          <p class="candidate-name">{{ name }}</p>
-        {% endif %}
+  <!-- ════════════════════════ NAV ════════════════════════ -->
+  <nav class="navbar">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
+          <path d="M9 12h6M9 16h6M9 8h2M5 4h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V5a1 1 0 011-1z" />
+        </svg>
       </div>
-    </header>
+      <span class="logo-name">CV<span class="logo-accent"> Insight</span> </span>
+    </div>
+    <!-- <div class="nav-links">
+    <a href="/" class="nav-link">Home</a>
+    <a href="#" class="nav-link">How It Works</a>
+    <a href="#" class="nav-link">For Candidates</a>
+    <a href="#" class="nav-link">For Employers</a>
+  </div>
+  <button class="btn-nav">Sign In / Up</button> -->
+  </nav>
 
-    <!-- ── SCORE BANNER ── -->
-    <section class="score-banner">
+  <!-- ════════════════════════ RESULT HERO ════════════════════════ -->
+  <section class="result-hero">
+    <div class="hero-bg-circle hero-bg-c1"></div>
+    <div class="hero-bg-circle hero-bg-c2"></div>
+
+    <div class="result-hero-inner">
+      <a href="/" class="back-btn">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M15 10H5M5 10l5-5M5 10l5 5" />
+        </svg>
+        Analyze Another
+      </a>
+      <div class="result-hero-text">
+        <div class="hero-eyebrow">
+          <span class="pulse-dot pulse-green"></span>
+          Analysis Complete
+        </div>
+        <h1 class="result-page-title">
+          {% if name != "Not found" %}{{ name }}'s {% endif %}Resume <em>Results</em>
+        </h1>
+        <p class="result-hero-sub">
+          {{ word_count }} words scanned &nbsp;·&nbsp; {{ resume_skills|length }} skills found &nbsp;·&nbsp;
+          {% if jd_provided %}JD match calculated{% else %}Upload a JD for match score{% endif %}
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════ MAIN RESULTS ════════════════════════ -->
+  <main class="result-main">
+
+    <!-- ── ROW 1: SCORE CARDS ── -->
+    <div class="score-row">
 
       <!-- Quality Score -->
-      <div class="score-card" data-score="{{ quality_score }}">
-        <div class="score-ring-wrap">
-          <svg class="score-ring" viewBox="0 0 120 120">
-            <circle class="ring-bg" cx="60" cy="60" r="50"/>
-            <circle class="ring-fill quality-ring" cx="60" cy="60" r="50"
-              style="--dash: {{ (quality_score / 100 * 314)|round(1) }}"/>
+      <div class="score-card card">
+        <p class="score-card-label">Resume Quality Score</p>
+        <div class="ring-wrap">
+          <svg class="ring-svg" viewBox="0 0 120 120">
+            <circle class="ring-bg" cx="60" cy="60" r="50" />
+            <circle class="ring-fg ring-quality" cx="60" cy="60" r="50"
+              style="stroke-dashoffset: calc(314 - {{ (quality_score / 100 * 314) | round(1) }})" />
           </svg>
-          <div class="score-center">
-            <span class="score-num">{{ quality_score }}</span>
-            <span class="score-label">/100</span>
+          <div class="ring-center">
+            <span class="ring-num">{{ quality_score }}</span>
+            <span class="ring-den"> /100</span>
           </div>
         </div>
-        <p class="score-title">Resume Quality</p>
-        <p class="score-grade {% if quality_score >= 75 %}grade-good{% elif quality_score >= 50 %}grade-mid{% else %}grade-low{% endif %}">
+        <span class="score-grade
+        {% if quality_score >= 75 %}grade-good{% elif quality_score >= 50 %}grade-mid{% else %}grade-low{% endif %}">
           {% if quality_score >= 75 %}Excellent{% elif quality_score >= 50 %}Good{% else %}Needs Work{% endif %}
-        </p>
+        </span>
       </div>
 
       <!-- Match Score -->
       {% if jd_provided %}
-      <div class="score-card" data-score="{{ match_score }}">
-        <div class="score-ring-wrap">
-          <svg class="score-ring" viewBox="0 0 120 120">
-            <circle class="ring-bg" cx="60" cy="60" r="50"/>
-            <circle class="ring-fill match-ring" cx="60" cy="60" r="50"
-              style="--dash: {{ (match_score / 100 * 314)|round(1) }}"/>
+      <div class="score-card card">
+        <p class="score-card-label">JD Match Score</p>
+        <div class="ring-wrap">
+          <svg class="ring-svg" viewBox="0 0 120 120">
+            <circle class="ring-bg" cx="60" cy="60" r="50" />
+            <circle class="ring-fg ring-match" cx="60" cy="60" r="50"
+              style="stroke-dashoffset: calc(314 - {{ (match_score / 100 * 314) | round(1) }})" />
           </svg>
-          <div class="score-center">
-            <span class="score-num">{{ match_score }}</span>
-            <span class="score-label">%</span>
+          <div class="ring-center">
+            <span class="ring-num">{{ match_score }}</span>
+            <span class="ring-den">%</span>
           </div>
         </div>
-        <p class="score-title">JD Match Score</p>
-        <p class="score-grade {% if match_score >= 65 %}grade-good{% elif match_score >= 40 %}grade-mid{% else %}grade-low{% endif %}">
+        <span class="score-grade
+        {% if match_score >= 65 %}grade-good{% elif match_score >= 40 %}grade-mid{% else %}grade-low{% endif %}">
           {% if match_score >= 65 %}Strong Match{% elif match_score >= 40 %}Moderate{% else %}Low Match{% endif %}
-        </p>
+        </span>
+      </div>
+      {% else %}
+      <div class="score-card card no-jd-card">
+        <p class="score-card-label">JD Match Score</p>
+        <div class="no-jd-icon">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="24" cy="24" r="20" />
+            <path d="M24 14v10M24 32v2" />
+          </svg>
+        </div>
+        <p class="no-jd-msg">No job description provided</p>
+        <a href="/" class="no-jd-link">Add JD →</a>
       </div>
       {% endif %}
 
-      <!-- Contact Info -->
-      <div class="score-card info-card">
-        <p class="info-title">Contact Info</p>
-        <div class="info-row"><span class="info-icon">✉</span> {{ email }}</div>
-        <div class="info-row"><span class="info-icon">📱</span> {{ phone }}</div>
-        <div class="info-row"><span class="info-icon">📝</span> {{ word_count }} words</div>
+      <!-- Contact Summary -->
+      <div class="score-card card contact-card">
+        <p class="score-card-label">Contact Info</p>
+        <div class="contact-list">
+          <div class="contact-row">
+            <div class="contact-icon ci-blue">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M2 4a1 1 0 011-1h10a1 1 0 011 1v8a1 1 0 01-1 1H3a1 1 0 01-1-1V4z" />
+                <path d="M2 4l6 5 6-5" />
+              </svg>
+            </div>
+            <div class="contact-detail">
+              <span class="contact-lbl">Email</span>
+              <span class="contact-val">{{ email }}</span>
+            </div>
+          </div>
+          <div class="contact-row">
+            <div class="contact-icon ci-green">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path
+                  d="M13 10.5v2a1 1 0 01-1.09 1A11.95 11.95 0 012.5 4.09 1 1 0 013.5 3h2a1 1 0 011 .86 7.5 7.5 0 00.4 1.6 1 1 0 01-.22 1.06L5.91 7.3A8 8 0 009.7 11.09l.78-.77a1 1 0 011.06-.22 7.5 7.5 0 001.6.4 1 1 0 01.86 1z" />
+              </svg>
+            </div>
+            <div class="contact-detail">
+              <span class="contact-lbl">Phone</span>
+              <span class="contact-val">{{ phone }}</span>
+            </div>
+          </div>
+          <div class="contact-row">
+            <div class="contact-icon ci-amber">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+                <rect x="2" y="2" width="12" height="12" rx="2" />
+                <path d="M5 5h6M5 8h4" />
+              </svg>
+            </div>
+            <div class="contact-detail">
+              <span class="contact-lbl">Word Count</span>
+              <span class="contact-val">{{ word_count }} words</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-    </section>
+    </div><!-- /score-row -->
 
-    <!-- ── TWO-COLUMN GRID ── -->
-    <div class="result-grid">
+    <!-- ── ROW 2: TWO COLUMNS ── -->
+    <div class="two-col-grid">
 
-      <!-- Left column -->
-      <div class="col">
+      <!-- LEFT COLUMN -->
+      <div class="left-col">
 
         <!-- Predicted Roles -->
-        <div class="card result-card">
-          <h2 class="card-heading">🎯 Predicted Job Roles</h2>
-          <ul class="role-list">
+        <div class="r-card card">
+          <div class="r-card-head">
+            <h3 class="r-card-title">🎯 Predicted Job Roles</h3>
+          </div>
+          <div class="roles-list">
             {% for role in predicted_roles %}
-              <li class="role-item">{{ role }}</li>
+            <div class="role-item {% if loop.first %}role-top{% endif %}">
+              <div class="role-rank">{{ loop.index }}</div>
+              <span class="role-name">{{ role }}</span>
+              {% if loop.first %}<span class="role-badge">Best Match</span>{% endif %}
+            </div>
             {% endfor %}
-          </ul>
+          </div>
         </div>
 
         <!-- Sections Detected -->
-        <div class="card result-card">
-          <h2 class="card-heading">📋 Sections Detected</h2>
-          <div class="section-grid">
+        <div class="r-card card">
+          <div class="r-card-head">
+            <h3 class="r-card-title">📋 Sections Detected</h3>
+            <span class="count-pill pill-blue">
+              {{ sections.values() | select | list | length }}/{{ sections | length }}
+            </span>
+          </div>
+          <div class="section-chips">
             {% for sec, found in sections.items() %}
-              <div class="section-chip {% if found %}chip-found{% else %}chip-missing{% endif %}">
-                {% if found %}✓{% else %}✗{% endif %} {{ sec }}
-              </div>
+            <span class="sec-chip {% if found %}chip-found{% else %}chip-miss{% endif %}">
+              {% if found %}
+              <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M2 6l2.5 2.5L10 3" />
+              </svg>
+              {% else %}
+              <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 3l6 6M9 3l-6 6" />
+              </svg>
+              {% endif %}
+              {{ sec }}
+            </span>
             {% endfor %}
           </div>
         </div>
 
         <!-- Quality Breakdown -->
-        <div class="card result-card">
-          <h2 class="card-heading">📊 Quality Breakdown</h2>
-          {% for criterion, score_str in quality_breakdown.items() %}
+        <div class="r-card card">
+          <div class="r-card-head">
+            <h3 class="r-card-title">📊 Quality Breakdown</h3>
+          </div>
+          <div class="breakdown-list">
+            {% for criterion, score_str in quality_breakdown.items() %}
             {% set parts = score_str.split('/') %}
             {% set got = parts[0]|int %}
-            {% set max = parts[1]|int %}
+            {% set mx = parts[1]|int %}
             <div class="breakdown-row">
-              <span class="breakdown-label">{{ criterion }}</span>
-              <div class="breakdown-bar-wrap">
-                <div class="breakdown-bar" style="--pct: {{ (got / max * 100)|int }}%"></div>
+              <span class="bd-label">{{ criterion }}</span>
+              <div class="bd-track">
+                <div class="bd-fill" data-pct="{{ (got / mx * 100)|int }}"></div>
               </div>
-              <span class="breakdown-score">{{ score_str }}</span>
+              <span class="bd-score">{{ score_str }}</span>
             </div>
-          {% endfor %}
+            {% endfor %}
+          </div>
         </div>
 
-      </div>
+      </div><!-- /left-col -->
 
-      <!-- Right column -->
-      <div class="col">
+      <!-- RIGHT COLUMN -->
+      <div class="right-col">
 
-        <!-- Resume Skills -->
-        <div class="card result-card">
-          <h2 class="card-heading">⚡ Skills Found
-            <span class="count-badge">{{ resume_skills|length }}</span>
-          </h2>
+        <!-- Skills Found -->
+        <div class="r-card card">
+          <div class="r-card-head">
+            <h3 class="r-card-title">⚡ Skills Found</h3>
+            <span class="count-pill pill-blue">{{ resume_skills|length }}</span>
+          </div>
           {% if resume_skills %}
-            <div class="skill-cloud">
-              {% for skill in resume_skills %}
-                <span class="skill-chip chip-resume" title="{{ skill_categories[skill] }}">{{ skill }}</span>
-              {% endfor %}
-            </div>
+          <div class="skill-cloud">
+            {% for skill in resume_skills %}
+            <span class="skill-chip chip-found-skill" title="{{ skill_categories[skill] }}">{{ skill }}</span>
+            {% endfor %}
+          </div>
           {% else %}
-            <p class="empty-msg">No known skills detected. Try expanding your skills section.</p>
+          <p class="empty-note">No recognisable skills detected. Expand your Skills section.</p>
           {% endif %}
         </div>
 
         <!-- Missing Skills -->
         {% if jd_provided %}
-        <div class="card result-card">
-          <h2 class="card-heading">🔴 Missing Skills
-            <span class="count-badge badge-red">{{ missing_skills|length }}</span>
-          </h2>
+        <div class="r-card card">
+          <div class="r-card-head">
+            <h3 class="r-card-title">🔴 Missing Skills</h3>
+            <span class="count-pill {% if missing_skills %}pill-red{% else %}pill-green{% endif %}">
+              {{ missing_skills|length }}
+            </span>
+          </div>
           {% if missing_skills %}
-            <div class="skill-cloud">
-              {% for skill in missing_skills %}
-                <span class="skill-chip chip-missing-skill">{{ skill }}</span>
-              {% endfor %}
-            </div>
+          <div class="skill-cloud">
+            {% for skill in missing_skills %}
+            <span class="skill-chip chip-missing-skill">{{ skill }}</span>
+            {% endfor %}
+          </div>
           {% else %}
-            <p class="empty-msg success-msg">✓ Your resume covers all skills from the job description!</p>
+          <p class="empty-note success-note">✓ Your resume covers all skills from the job description!</p>
           {% endif %}
         </div>
         {% endif %}
 
         <!-- Grammar -->
-        <div class="card result-card">
-          <h2 class="card-heading">✏️ Grammar Check
-            <span class="count-badge {% if grammar_error_count > 0 %}badge-red{% endif %}">
-              {{ grammar_error_count }} issues
+        <div class="r-card card">
+          <div class="r-card-head">
+            <h3 class="r-card-title">✏️ Grammar Check</h3>
+            <span class="count-pill {% if grammar_error_count > 0 %}pill-red{% else %}pill-green{% endif %}">
+              {{ grammar_error_count }} issue{{ 's' if grammar_error_count != 1 }}
             </span>
-          </h2>
-          {% if grammar_errors %}
-            <ul class="grammar-list">
-              {% for err in grammar_errors[:8] %}
-                <li class="grammar-item">{{ err }}</li>
-              {% endfor %}
-            </ul>
+          </div>
+          {% if grammar_error_count == 0 %}
+          <p class="empty-note success-note">✓ No grammar issues detected.</p>
+          {% else %}
+          <ul class="grammar-list">
+            {% for err in grammar_errors[:8] %}
+            <li class="grammar-item">{{ err }}</li>
+            {% endfor %}
+            {% if grammar_errors|length > 8 %}
+            <li class="grammar-item grammar-more">+ {{ grammar_errors|length - 8 }} more issues…</li>
+            {% endif %}
+          </ul>
           {% endif %}
         </div>
 
+      </div><!-- /right-col -->
+
+    </div><!-- /two-col-grid -->
+
+    <!-- ── SUGGESTIONS ── -->
+    <div class="r-card card suggestions-card">
+      <div class="r-card-head">
+        <h3 class="r-card-title">💡 Improvement Suggestions</h3>
+        <span class="count-pill pill-amber">{{ suggestions|length }} tip{{ 's' if suggestions|length != 1 }}</span>
+      </div>
+      <div class="suggestion-grid">
+        {% for s in suggestions %}
+        <div class="suggestion-item">
+          <div class="sugg-num">{{ loop.index }}</div>
+          <p class="sugg-text">{{ s }}</p>
+        </div>
+        {% endfor %}
       </div>
     </div>
 
-    <!-- ── SUGGESTIONS ── -->
-    <section class="card result-card suggestions-card">
-      <h2 class="card-heading">💡 Improvement Suggestions</h2>
-      <ul class="suggestion-list">
-        {% for s in suggestions %}
-          <li class="suggestion-item">{{ s }}</li>
-        {% endfor %}
-      </ul>
-    </section>
-
     <!-- ── CTA ── -->
-    <div class="cta-row">
-      <a href="/" class="btn-analyze">← Analyze Another Resume</a>
+    <div class="cta-banner">
+      <div class="cta-text">
+        <h2>Ready to land your dream role?</h2>
+        <p>Upload a job description for a detailed match report, or explore open roles that fit your profile.</p>
+      </div>
+      <div class="cta-btns">
+        <a href="/" class="btn-cta-primary">
+          Analyze Another Resume
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M4 10h12M10 4l6 6-6 6" />
+          </svg>
+        </a>
+        <a href="#" class="btn-cta-ghost">Explore Job Matches</a>
+      </div>
     </div>
-
-    <footer class="footer">AI Resume Analyzer &nbsp;·&nbsp; Built with Flask, NLTK &amp; Scikit-learn</footer>
 
   </main>
 
-  <script>
-    // Animate score rings on load
-    document.querySelectorAll('.ring-fill').forEach(ring => {
-      const dash = getComputedStyle(ring).getPropertyValue('--dash');
-      ring.style.strokeDashoffset = 314;
-      setTimeout(() => {
-        ring.style.transition = 'stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1)';
-        ring.style.strokeDashoffset = 314 - parseFloat(dash);
-      }, 200);
-    });
+  <footer class="site-footer">
+    CV Insight &nbsp;·&nbsp; Built with Flask, NLTK &amp; Scikit-learn &nbsp;·&nbsp; © 2026-2027, All rights reserved.
+  </footer>
 
-    // Animate progress bars
-    document.querySelectorAll('.breakdown-bar').forEach(bar => {
-      const pct = getComputedStyle(bar).getPropertyValue('--pct');
-      bar.style.width = '0%';
+  <script>
+    // Animate breakdown bars on load
+    document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
-        bar.style.transition = 'width 1s ease';
-        bar.style.width = pct;
-      }, 300);
+        document.querySelectorAll('.bd-fill').forEach(el => {
+          el.style.width = el.dataset.pct + '%';
+        });
+        // Animate ring offsets
+        document.querySelectorAll('.ring-fg').forEach(el => {
+          el.style.transition = 'stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1)';
+        });
+      }, 200);
     });
   </script>
 
 </body>
+
 </html>
