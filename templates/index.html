@@ -1,149 +1,341 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>AI Resume Analyzer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CareerPath AI — Resume Analyzer</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Fraunces:ital,wght@0,300;0,600;1,300&display=swap"
+    rel="stylesheet">
 </head>
-<body>
 
-  <!-- ── BACKGROUND GRID ── -->
-  <div class="bg-grid"></div>
-  <div class="bg-orb orb1"></div>
-  <div class="bg-orb orb2"></div>
+<body class="index-page">
 
-  <main class="page-wrap">
+  <!-- ════════════════════════ NAV ════════════════════════ -->
+  <nav class="navbar">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
+          <path d="M9 12h6M9 16h6M9 8h2M5 4h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V5a1 1 0 011-1z" />
+        </svg>
+      </div>
+      <span class="logo-name">CV <span class="logo-accent">Insight</span></span>
+    </div>
+    <div class="nav-links">
+      <!-- <a href="#" class="nav-link active">Home</a>
+    <a href="#" class="nav-link">How It Works</a>
+    <a href="#" class="nav-link">For Candidates</a>
+    <a href="#" class="nav-link">For Employers</a> -->
+    </div>
+    <!-- <button class="btn-nav">Sign In / Up</button> -->
+  </nav>
 
-    <!-- ── HERO ── -->
-    <header class="hero">
-      <div class="badge">✦ Powered by NLP &amp; TF-IDF</div>
-      <h1 class="hero-title">
-        <span class="accent">AI</span> Resume<br>Analyzer
-      </h1>
-      <p class="hero-sub">Upload your resume. Paste a job description. Get instant feedback, skill gaps, match score, and role predictions.</p>
-    </header>
+  <!-- ════════════════════════ HERO ════════════════════════ -->
+  <section class="hero">
+    <div class="hero-bg-circle hero-bg-c1"></div>
+    <div class="hero-bg-circle hero-bg-c2"></div>
 
-    <!-- ── FLASH MESSAGES ── -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="flash flash-{{ category }}">⚠ {{ message }}</div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
+    <div class="hero-inner">
+      <div class="hero-eyebrow">
+        <span class="pulse-dot"></span>
+        AI-Powered Career Intelligence
+      </div>
+      <h1 class="hero-title">Your Skill Analysis<br><em>Dashboard</em></h1>
+      <p class="hero-sub">Upload your resume and paste a job description. Get instant match scores, skill gap analysis,
+        role predictions, and improvement tips — in seconds.</p>
 
-    <!-- ── UPLOAD FORM ── -->
-    <section class="card form-card">
-      <form action="/analyze" method="post" enctype="multipart/form-data" id="analyzeForm">
+      <!-- Progress Steps -->
+      <div class="steps-bar">
+        <div class="step-item">
+          <div class="step-dot dot-done">✓</div>
+          <span class="step-label">Upload Resume</span>
+        </div>
+        <div class="step-line"></div>
+        <div class="step-item">
+          <div class="step-dot dot-active">2</div>
+          <span class="step-label">AI Analysis</span>
+        </div>
+        <div class="step-line"></div>
+        <div class="step-item">
+          <div class="step-dot dot-pending">3</div>
+          <span class="step-label">Get Results</span>
+        </div>
+      </div>
+    </div>
+  </section>
 
-        <!-- File Drop Zone -->
-        <div class="field">
-          <label class="field-label">Resume File <span class="tag">PDF or DOCX</span></label>
+  <!-- ════════════════════════ FLASH ════════════════════════ -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="flash-wrap">
+    {% for category, message in messages %}
+    <div class="flash flash-{{ category }}">
+      <span class="flash-icon">{% if category == 'error' %}⚠{% else %}✓{% endif %}</span>
+      {{ message }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endwith %}
+
+  <!-- ════════════════════════ MAIN FORM ════════════════════════ -->
+  <main class="main-wrap">
+
+    <form action="/analyze" method="post" enctype="multipart/form-data" id="analyzeForm" novalidate>
+
+      <div class="form-grid">
+
+        <!-- ── COLUMN 1: UPLOAD ── -->
+        <div class="form-col card">
+          <div class="col-header">
+            <div class="col-num">01</div>
+            <div class="col-head-text">
+              <h2 class="col-title">Upload Your Resume</h2>
+              <p class="col-sub">PDF or DOCX format · Max 10 MB</p>
+            </div>
+          </div>
+
+          <!-- Drop Zone -->
           <div class="drop-zone" id="dropZone">
-            <div class="drop-icon">
-              <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M24 4L24 32M24 4L14 14M24 4L34 14" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M8 36V40C8 41.1 8.9 42 10 42H38C39.1 42 40 41.1 40 40V36" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+            <div class="drop-icon-bg">
+              <svg class="drop-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round">
+                <path d="M24 32V12M24 12l-8 8M24 12l8 8" />
+                <rect x="6" y="34" width="36" height="8" rx="4" stroke-width="2" />
               </svg>
             </div>
-            <p class="drop-text">Drag &amp; drop your resume here</p>
-            <p class="drop-hint">or click to browse files</p>
+            <p class="drop-title">Drag &amp; Drop your resume</p>
+            <p class="drop-hint">or click to browse your files</p>
             <input type="file" id="resumeFile" name="resume" accept=".pdf,.docx" required hidden />
-            <div class="file-name" id="fileName">No file chosen</div>
+            <button type="button" class="btn-browse" id="browseBtn">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 7a2 2 0 012-2h2l2-2h4l2 2h2a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+                <circle cx="10" cy="11" r="2.5" />
+              </svg>
+              Browse Files
+            </button>
+            <div class="file-pill" id="filePill" style="display:none">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M10 1H4a1 1 0 00-1 1v12a1 1 0 001 1h8a1 1 0 001-1V5l-3-4z" />
+                <path d="M10 1v4h3" />
+              </svg>
+              <span id="fileName">file.pdf</span>
+              <button type="button" id="clearFile" class="clear-file">✕</button>
+            </div>
+          </div>
+
+          <!-- Format badges -->
+          <div class="fmt-row">
+            <span class="fmt-badge">PDF</span>
+            <span class="fmt-badge">DOCX</span>
+            <span class="fmt-badge fmt-size">≤ 10 MB</span>
+          </div>
+
+          <!-- Tips box -->
+          <div class="tips-box">
+            <p class="tips-title">📌 Tips for best results</p>
+            <ul class="tips-list">
+              <li>Use a clean, single-column layout</li>
+              <li>Include sections: Summary, Skills, Experience</li>
+              <li>Avoid tables and heavy formatting</li>
+            </ul>
           </div>
         </div>
 
-        <!-- Job Description -->
-        <div class="field">
-          <label class="field-label" for="jobDesc">
-            Job Description
-            <span class="tag optional">Optional – for match score</span>
-          </label>
-          <textarea
-            id="jobDesc"
-            name="job_description"
-            rows="7"
-            placeholder="Paste the full job description here to get a match score and identify missing skills…"
-          ></textarea>
+        <!-- ── COLUMN 2: JOB DESCRIPTION ── -->
+        <div class="form-col card">
+          <div class="col-header">
+            <div class="col-num">02</div>
+            <div class="col-head-text">
+              <h2 class="col-title">Job Description</h2>
+              <p class="col-sub">Optional · Enables match score &amp; gap analysis</p>
+            </div>
+          </div>
+
+          <div class="jd-container">
+            <textarea id="jobDesc" name="job_description" rows="12"
+              placeholder="Paste the full job description here…&#10;&#10;Example:&#10;We are looking for a Python Developer with hands-on experience in machine learning, REST APIs, and SQL. The candidate should have strong communication skills and be comfortable working in an Agile environment..."></textarea>
+            <div class="jd-bar">
+              <span class="char-count" id="charCount">0 characters</span>
+              <span class="jd-boost-badge">
+                <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path
+                    d="M7 2v2M7 10v2M2 7h2M10 7h2M3.64 3.64l1.42 1.42M8.94 8.94l1.42 1.42M3.64 10.36l1.42-1.42M8.94 5.06l1.42-1.42" />
+                </svg>
+                Boosts match accuracy
+              </span>
+            </div>
+          </div>
+
+          <!-- What you get -->
+          <div class="what-you-get">
+            <p class="wyg-title">With a job description you unlock:</p>
+            <div class="wyg-list">
+              <div class="wyg-item wyg-blue">
+                <span>🎯</span> JD Match Score (%)
+              </div>
+              <div class="wyg-item wyg-red">
+                <span>🔍</span> Missing Skills Detection
+              </div>
+              <div class="wyg-item wyg-green">
+                <span>💡</span> Tailored Suggestions
+              </div>
+            </div>
+          </div>
         </div>
 
+      </div><!-- /form-grid -->
+
+      <!-- ── SUBMIT BUTTON ── -->
+      <div class="submit-area">
         <button type="submit" class="btn-analyze" id="submitBtn">
-          <span class="btn-text">Analyze Resume</span>
-          <span class="btn-icon">→</span>
+          <span class="btn-text">Analyze My Resume</span>
+          <span class="btn-icon-wrap">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M4 10h12M10 4l6 6-6 6" />
+            </svg>
+          </span>
         </button>
+        <p class="submit-note">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6">
+            <circle cx="7" cy="7" r="6" />
+            <path d="M7 4v3l2 1" />
+          </svg>
+          Takes 4-8 seconds &nbsp;·&nbsp;
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6">
+            <rect x="2" y="6" width="10" height="7" rx="1.5" />
+            <path d="M5 6V4a2 2 0 014 0v2" />
+          </svg>
+          No data stored
+        </p>
+      </div>
 
-      </form>
-    </section>
+    </form>
 
-    <!-- ── FEATURE GRID ── -->
-    <section class="features">
-      <div class="feat-item">
-        <div class="feat-icon">⚡</div>
-        <h3>Instant Parsing</h3>
-        <p>PDF &amp; DOCX text extracted in seconds using PyPDF2 &amp; python-docx.</p>
+    <!-- ── FEATURES ── -->
+    <div class="features-row">
+      <div class="feat-card">
+        <div class="feat-icon-wrap fi-blue">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M4 4h12v12H4zM8 4v12M4 8h12" />
+          </svg>
+        </div>
+        <h4>Instant Parsing</h4>
+        <p>PDF &amp; DOCX extracted using PyPDF2 and python-docx</p>
       </div>
-      <div class="feat-item">
-        <div class="feat-icon">🎯</div>
-        <h3>Match Score</h3>
-        <p>TF-IDF + Cosine Similarity measures how well your resume fits the role.</p>
+      <div class="feat-card">
+        <div class="feat-icon-wrap fi-teal">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="10" cy="10" r="8" />
+            <path d="M6 10l2.5 2.5L14 7" />
+          </svg>
+        </div>
+        <h4>Match Scoring</h4>
+        <p>TF-IDF vectorization + cosine similarity algorithm</p>
       </div>
-      <div class="feat-item">
-        <div class="feat-icon">🧠</div>
-        <h3>Role Prediction</h3>
-        <p>Skill-category intelligence predicts the best-fit job roles for you.</p>
+      <div class="feat-card">
+        <div class="feat-icon-wrap fi-green">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M3 4h14v2H3zM3 9h10v2H3zM3 14h7v2H3z" />
+          </svg>
+        </div>
+        <h4>NLP Processing</h4>
+        <p>Tokenization, lemmatization &amp; stop-word removal via NLTK</p>
       </div>
-      <div class="feat-item">
-        <div class="feat-icon">✏️</div>
-        <h3>Quality Feedback</h3>
-        <p>Section detection, grammar check, and actionable improvement tips.</p>
+      <div class="feat-card">
+        <div class="feat-icon-wrap fi-amber">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M10 2l2.4 5 5.6.8-4 3.9.9 5.5L10 14.5l-4.9 2.7.9-5.5L2 7.8l5.6-.8z" />
+          </svg>
+        </div>
+        <h4>Role Prediction</h4>
+        <p>Skill-category intelligence predicts best-fit job roles</p>
       </div>
-    </section>
+    </div>
 
-    <footer class="footer">AI Resume Analyzer &nbsp;·&nbsp; Built with Flask, NLTK &amp; Scikit-learn</footer>
+    <!-- ── STATS ──
+  <div class="stats-strip">
+    <div class="stat-item">
+      <span class="stat-num">50+</span>
+      <span class="stat-lbl">Resumes Analyzed</span>
+    </div>
+    <div class="stat-div"></div>
+    <div class="stat-item">
+      <span class="stat-num">94%</span>
+      <span class="stat-lbl">Match Accuracy</span>
+    </div>
+    <div class="stat-div"></div>
+    <div class="stat-item">
+      <span class="stat-num">2s</span>
+      <span class="stat-lbl">Avg. Analysis Time</span>
+    </div>
+    <div class="stat-div"></div>
+    <div class="stat-item">
+      <span class="stat-num">120+</span>
+      <span class="stat-lbl">Skills in Dataset</span>
+    </div>
+  </div> -->
 
   </main>
 
+  <footer class="site-footer">
+    CV Insight &nbsp;·&nbsp; Built with Flask, NLTK &amp; Scikit-learn &nbsp;·&nbsp; © 2026-2027, All rights reserved.
+  </footer>
+
   <script>
-    const dropZone = document.getElementById('dropZone');
-    const fileInput = document.getElementById('resumeFile');
-    const fileName  = document.getElementById('fileName');
-    const form      = document.getElementById('analyzeForm');
-    const submitBtn = document.getElementById('submitBtn');
+    (function () {
+      const dropZone = document.getElementById('dropZone');
+      const fileInput = document.getElementById('resumeFile');
+      const filePill = document.getElementById('filePill');
+      const fileName = document.getElementById('fileName');
+      const browseBtn = document.getElementById('browseBtn');
+      const clearFile = document.getElementById('clearFile');
+      const form = document.getElementById('analyzeForm');
+      const submitBtn = document.getElementById('submitBtn');
+      const jdArea = document.getElementById('jobDesc');
+      const charCount = document.getElementById('charCount');
 
-    dropZone.addEventListener('click', () => fileInput.click());
+      browseBtn.addEventListener('click', () => fileInput.click());
 
-    dropZone.addEventListener('dragover', e => {
-      e.preventDefault();
-      dropZone.classList.add('drag-over');
-    });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-    dropZone.addEventListener('drop', e => {
-      e.preventDefault();
-      dropZone.classList.remove('drag-over');
-      if (e.dataTransfer.files.length) {
-        fileInput.files = e.dataTransfer.files;
-        updateFileName(e.dataTransfer.files[0].name);
+      dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dz-over'); });
+      dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dz-over'));
+      dropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        dropZone.classList.remove('dz-over');
+        if (e.dataTransfer.files.length) { fileInput.files = e.dataTransfer.files; setFile(e.dataTransfer.files[0].name); }
+      });
+
+      fileInput.addEventListener('change', () => { if (fileInput.files.length) setFile(fileInput.files[0].name); });
+
+      clearFile.addEventListener('click', e => {
+        e.stopPropagation();
+        fileInput.value = '';
+        filePill.style.display = 'none';
+        dropZone.classList.remove('dz-has-file');
+      });
+
+      function setFile(name) {
+        fileName.textContent = name;
+        filePill.style.display = 'inline-flex';
+        dropZone.classList.add('dz-has-file');
       }
-    });
 
-    fileInput.addEventListener('change', () => {
-      if (fileInput.files.length) updateFileName(fileInput.files[0].name);
-    });
+      jdArea.addEventListener('input', () => {
+        const n = jdArea.value.length;
+        charCount.textContent = n.toLocaleString() + ' character' + (n !== 1 ? 's' : '');
+      });
 
-    function updateFileName(name) {
-      fileName.textContent = '📄 ' + name;
-      fileName.classList.add('has-file');
-    }
-
-    form.addEventListener('submit', () => {
-      submitBtn.classList.add('loading');
-      submitBtn.querySelector('.btn-text').textContent = 'Analyzing…';
-    });
+      form.addEventListener('submit', () => {
+        submitBtn.classList.add('btn-loading');
+        submitBtn.querySelector('.btn-text').textContent = 'Analyzing…';
+        submitBtn.disabled = true;
+      });
+    })();
   </script>
 
 </body>
-</html>
 
+</html>
