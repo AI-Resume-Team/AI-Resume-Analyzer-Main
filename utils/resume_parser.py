@@ -88,4 +88,3 @@ def detect_sections(text):
     for section, keywords in section_keywords.items():
         found[section] = any(kw in text_lower for kw in keywords)
     return found
-
