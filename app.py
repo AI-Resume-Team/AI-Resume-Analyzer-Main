@@ -1,12 +1,18 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, session
+from werkzeug.security import generate_password_hash, check_password_hash
+from functools import wraps
 
 from utils.resume_parser import parse_resume, extract_email, extract_phone, extract_name, detect_sections
 from utils.skill_extractor import extract_skills, get_missing_skills, predict_job_role, get_skill_categories
 from utils.matcher import compute_match_score, compute_resume_quality_score, generate_suggestions, check_grammar
 
 app = Flask(__name__)
-app.secret_key = "ai-resume-analyzer-secret-key"
+app.secret_key = "ai-resume-analyzer-secret-key-2026"
+
+# ── Simple in-memory user store (replace with DB in production) ──
+# Format: { "email": { "name": ..., "password_hash": ... } }
+USERS: dict = {}
 
 ALLOWED_EXTENSIONS = {"pdf", "docx"}
 
@@ -15,12 +21,103 @@ def allowed_file(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+def login_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if "user_email" not in session:
+            flash("Please log in to access the analyzer.", "info")
+            return redirect(url_for("login"))
+        return f(*args, **kwargs)
+    return decorated
+
+
+# ══════════════════════════════════════════════════════════
+#  AUTH ROUTES
+# ══════════════════════════════════════════════════════════
+
+@app.route("/signup", methods=["GET", "POST"])
+def signup():
+    if "user_email" in session:
+        return redirect(url_for("index"))
+
+    if request.method == "POST":
+        name      = request.form.get("name", "").strip()
+        email     = request.form.get("email", "").strip().lower()
+        password  = request.form.get("password", "")
+        confirm   = request.form.get("confirm_password", "")
+
+        # Validation
+        if not name or not email or not password:
+            flash("All fields are required.", "error")
+            return render_template("signup.html")
+
+        if len(password) < 8:
+            flash("Password must be at least 8 characters.", "error")
+            return render_template("signup.html")
+
+        if password != confirm:
+            flash("Passwords do not match.", "error")
+            return render_template("signup.html")
+
+        if email in USERS:
+            flash("An account with this email already exists.", "error")
+            return render_template("signup.html")
+
+        # Create user
+        USERS[email] = {
+            "name": name,
+            "password_hash": generate_password_hash(password),
+        }
+
+        session["user_email"] = email
+        session["user_name"]  = name
+        flash(f"Welcome, {name}! Your account has been created.", "success")
+        return redirect(url_for("index"))
+
+    return render_template("signup.html")
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if "user_email" in session:
+        return redirect(url_for("index"))
+
+    if request.method == "POST":
+        email    = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+
+        user = USERS.get(email)
+        if not user or not check_password_hash(user["password_hash"], password):
+            flash("Invalid email or password.", "error")
+            return render_template("login.html")
+
+        session["user_email"] = email
+        session["user_name"]  = user["name"]
+        flash(f"Welcome back, {user['name']}!", "success")
+        return redirect(url_for("index"))
+
+    return render_template("login.html")
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    flash("You have been logged out.", "info")
+    return redirect(url_for("login"))
+
+
+# ══════════════════════════════════════════════════════════
+#  MAIN ROUTES
+# ══════════════════════════════════════════════════════════
+
 @app.route("/", methods=["GET"])
+@login_required
 def index():
-    return render_template("index.html")
+    return render_template("index.html", user_name=session.get("user_name", ""))
 
 
 @app.route("/analyze", methods=["POST"])
+@login_required
 def analyze():
     # ── 1. Validate inputs ────────────────────────────────────────────────
     if "resume" not in request.files:
@@ -104,6 +201,7 @@ def analyze():
         suggestions=suggestions,
         word_count=len(resume_text.split()),
         jd_provided=bool(jd_text),
+        user_name=session.get("user_name", ""),
     )
 
 
