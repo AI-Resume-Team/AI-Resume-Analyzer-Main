@@ -107,4 +107,3 @@ def predict_job_role(skills: list) -> list:
             roles.append(role)
 
     return roles if roles else ["General Software Role"]
-
