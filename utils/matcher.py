@@ -1,10 +1,9 @@
 from utils.preprocessing import clean_text
 
-
 def compute_match_score(resume_text: str, jd_text: str) -> float:
     """
-    Compute cosine similarity between resume and job description using TF-IDF.
-    Returns a percentage score rounded to 2 decimal places (0–100).
+    Compare resume with job description using TF-IDF cosine similarity.
+    Returns a percentage score (0–100), rounded to 2 decimals.
     """
     if not resume_text or not jd_text:
         return 0.0
@@ -17,19 +16,23 @@ def compute_match_score(resume_text: str, jd_text: str) -> float:
         from sklearn.metrics.pairwise import cosine_similarity
 
         vectorizer = TfidfVectorizer()
-        vectors = vectorizer.fit_transform([cleaned_resume, cleaned_jd])
-        score = cosine_similarity(vectors[0], vectors[1])[0][0]
-        return round(float(score) * 100, 2)
+        tfidf_vectors = vectorizer.fit_transform([cleaned_resume, cleaned_jd])
+
+        similarity = cosine_similarity(tfidf_vectors[0], tfidf_vectors[1])[0][0]
+        return round(float(similarity) * 100, 2)
 
     except ImportError:
-        # Fallback: Jaccard similarity on word sets
-        set_r = set(cleaned_resume.split())
-        set_j = set(cleaned_jd.split())
-        if not set_r or not set_j:
+        # Fallback: simple Jaccard similarity
+        resume_words = set(cleaned_resume.split())
+        jd_words = set(cleaned_jd.split())
+
+        if not resume_words or not jd_words:
             return 0.0
-        intersection = set_r & set_j
-        union = set_r | set_j
-        return round(len(intersection) / len(union) * 100, 2)
+
+        common_words = resume_words & jd_words
+        all_words = resume_words | jd_words
+
+        return round(len(common_words) / len(all_words) * 100, 2)
 
 
 def compute_resume_quality_score(
@@ -39,58 +42,61 @@ def compute_resume_quality_score(
     grammar_errors: int = 0,
 ) -> dict:
     """
-    Compute a holistic resume quality score (0–100) and return a breakdown.
+    Calculate an overall resume quality score (0–100) with a breakdown.
 
-    Scoring rubric
-    --------------
-    Sections present      : up to 30 pts  (5 pts each for 6 key sections)
-    Skill count           : up to 25 pts  (1 pt per skill, capped at 25)
-    Word count adequacy   : up to 20 pts
-    Grammar               : up to 15 pts  (deduct per error)
-    Contact info present  : up to 10 pts
+    Scoring:
+    - Sections           : 30 pts max
+    - Skills             : 25 pts max
+    - Word count         : 20 pts max
+    - Grammar            : 15 pts max
+    - Contact info       : 10 pts max
     """
-    score = 0
+    total_score = 0
     breakdown = {}
 
-    # 1. Sections (30 pts)
+    # Sections (30 pts)
     key_sections = ["Education", "Experience", "Skills", "Projects", "Summary", "Certifications"]
-    section_score = sum(5 for s in key_sections if sections_found.get(s, False))
-    score += section_score
-    breakdown["Sections Detected"] = f"{section_score}/30"
+    section_points = sum(5 for section in key_sections if sections_found.get(section, False))
+    total_score += section_points
+    breakdown["Sections Detected"] = f"{section_points}/30"
 
-    # 2. Skill count (25 pts)
-    skill_score = min(len(skills), 25)
-    score += skill_score
-    breakdown["Skills Found"] = f"{skill_score}/25"
+    # Skills (25 pts)
+    skill_points = min(len(skills), 25)
+    total_score += skill_points
+    breakdown["Skills Found"] = f"{skill_points}/25"
 
-    # 3. Word count (20 pts)
+    # Word count (20 pts)
     word_count = len(resume_text.split())
+
     if word_count >= 400:
-        wc_score = 20
+        wc_points = 20
     elif word_count >= 250:
-        wc_score = 14
+        wc_points = 14
     elif word_count >= 100:
-        wc_score = 7
+        wc_points = 7
     else:
-        wc_score = 2
-    score += wc_score
-    breakdown["Word Count Adequacy"] = f"{wc_score}/20"
+        wc_points = 2
 
-    # 4. Grammar (15 pts)
-    grammar_score = max(0, 15 - grammar_errors * 2)
-    score += grammar_score
-    breakdown["Grammar Quality"] = f"{grammar_score}/15"
+    total_score += wc_points
+    breakdown["Word Count Adequacy"] = f"{wc_points}/20"
 
-    # 5. Contact info (10 pts) – simple heuristic
+    # Grammar (15 pts)
+    grammar_points = max(0, 15 - grammar_errors * 2)
+    total_score += grammar_points
+    breakdown["Grammar Quality"] = f"{grammar_points}/15"
+
+    # Contact info (10 pts)
     import re
+
     has_email = bool(re.search(r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}", resume_text))
     has_phone = bool(re.search(r"\+?\d[\d\s\-().]{7,}\d", resume_text))
-    contact_score = (5 if has_email else 0) + (5 if has_phone else 0)
-    score += contact_score
-    breakdown["Contact Information"] = f"{contact_score}/10"
+
+    contact_points = (5 if has_email else 0) + (5 if has_phone else 0)
+    total_score += contact_points
+    breakdown["Contact Information"] = f"{contact_points}/10"
 
     return {
-        "total": min(score, 100),
+        "total": min(total_score, 100),
         "breakdown": breakdown,
     }
 
@@ -104,60 +110,57 @@ def generate_suggestions(
     word_count: int,
 ) -> list:
     """
-    Generate actionable improvement suggestions based on analysis results.
-    Returns a list of suggestion strings.
+    Generate practical suggestions to improve the resume.
     """
     suggestions = []
 
-    # Sections
-    missing_sections = [s for s, v in sections_found.items() if not v]
+    # Missing sections
+    missing_sections = [section for section, present in sections_found.items() if not present]
     if missing_sections:
         suggestions.append(
             f"Add missing resume sections: {', '.join(missing_sections)}."
         )
 
-    # Skills
+    # Skills improvement
     if len(skills) < 8:
         suggestions.append(
-            "List more technical and soft skills — aim for at least 10 relevant skills."
+            "Include more skills — aim for at least 10 relevant technical and soft skills."
         )
 
     if missing_skills:
-        top_missing = missing_skills[:5]
         suggestions.append(
-            f"Consider adding these skills from the job description: {', '.join(top_missing)}."
+            f"Consider adding these skills from the job description: {', '.join(missing_skills[:5])}."
         )
 
-    # Match score
+    # Match score feedback
     if match_score < 40:
         suggestions.append(
-            "Your resume has a low match with the job description. "
-            "Tailor your summary, skills, and experience to mirror the JD's language."
+            "Low match with the job description. Try aligning your summary, skills, and experience with JD keywords."
         )
     elif match_score < 65:
         suggestions.append(
-            "Moderate match score. Strengthen alignment by using more keywords from the job description."
+            "Moderate match score. Improve alignment by incorporating more JD-specific keywords."
         )
 
-    # Word count
+    # Word count feedback
     if word_count < 250:
         suggestions.append(
-            "Your resume seems too short. Expand your experience, projects, or summary sections."
+            "Resume is too short. Expand your experience, projects, or summary."
         )
     elif word_count > 900:
         suggestions.append(
-            "Your resume may be too long. Keep it concise — ideally 400–700 words for most roles."
+            "Resume is quite long. Keep it concise — ideally 400–700 words."
         )
 
-    # Quality
+    # Overall quality
     if quality_score < 50:
         suggestions.append(
-            "Overall quality score is low. Focus on completeness, contact info, and grammar."
+            "Overall quality is low. Improve completeness, grammar, and contact details."
         )
 
     if not suggestions:
         suggestions.append(
-            "Great resume! Fine-tune keywords and quantify achievements for maximum impact."
+            "Strong resume overall. Fine-tune keywords and quantify achievements for better impact."
         )
 
     return suggestions
@@ -165,15 +168,18 @@ def generate_suggestions(
 
 def check_grammar(text: str) -> tuple:
     """
-    Use language_tool_python to check grammar.
-    Returns (error_count, list_of_error_messages).
-    Falls back gracefully if the library isn't installed.
+    Check grammar using language_tool_python.
+    Returns (error_count, error_messages).
+    Gracefully falls back if the library isn't available.
     """
     try:
         import language_tool_python
+
         tool = language_tool_python.LanguageTool("en-US")
-        matches = tool.check(text[:3000])  # limit to first 3000 chars for speed
-        errors = [f"• {m.ruleId}: {m.message}" for m in matches[:10]]
+        matches = tool.check(text[:3000])  # limit for performance
+
+        errors = [f"• {match.ruleId}: {match.message}" for match in matches[:10]]
         return len(matches), errors
+
     except Exception:
         return 0, ["Grammar checking unavailable (install language_tool_python)."]
